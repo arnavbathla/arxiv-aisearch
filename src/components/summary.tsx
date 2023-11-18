@@ -6,6 +6,9 @@ import axios from 'axios';
 import OpenAIApi from "openai";
 import createCompletion from "openai";
 import Configuration from "openai";
+import { parseStringPromise } from 'xml2js';
+import Link from 'next/link';
+import About from './about';
 
 
 export default function Summary() {
@@ -40,8 +43,16 @@ export default function Summary() {
   const searchPapers = async (processedQuery: string) => {
     try {
       const response = await axios.get(`http://export.arxiv.org/api/query?search_query=all:${processedQuery}&start=0&max_results=10`);
-      // Assuming the response is in the correct format; adjust based on actual API response
-      setPapers(response.data.feed.entry);
+      const xmlData = response.data;
+      const parsedData = await parseStringPromise(xmlData);
+      const papers = parsedData.feed.entry.map((entry: any) => ({
+        id: entry.id[0].split('/abs/').pop(), // Extracting the paper ID
+        title: entry.title[0],
+        summary: entry.summary[0],
+        authors: entry.author.map((author: any) => author.name[0]).join(', '),
+        date: new Date(entry.published[0]).toLocaleDateString() // Adding the date
+      }));
+      setPapers(papers);
     } catch (error) {
       console.error('Error fetching papers:', error);
     } finally {
@@ -60,55 +71,57 @@ export default function Summary() {
   };
 
   return (
-    <div className="font-sans antialiased text-gray-900 bg-gray-50">
-      <header className="px-6 bg-white border-b border-gray-200">
+    <div className="font-sans antialiased text-gray-800 bg-gray-100">
+      <header className="px-6 bg-white border-b border-gray-200 shadow-sm">
         <div className="container mx-auto flex justify-between items-center py-4">
-          <div className="text-2xl font-semibold">AI Summaries</div>
+          <div className="text-2xl font-semibold">AI-powered Search Engine for Research Papers on arXiv</div>
           <nav>
             <ul className="flex space-x-4 text-sm font-medium">
               <li>
-                <a className="text-gray-600 hover:text-gray-800" href="#">
-                  Home
-                </a>
-              </li>
-              <li>
-                <a className="text-gray-600 hover:text-gray-800" href="#">
-                  About
-                </a>
+                <Link href="/">
+                  <span className="text-gray-600 hover:text-gray-800 cursor-pointer">Home</span>
+                </Link>
               </li>
               {/* <li>
-                <a className="text-gray-600 hover:text-gray-800" href="#">
-                  Contact
-                </a>
+                <Link href="/about">
+                  <span className="text-gray-600 hover:text-gray-800 cursor-pointer">About</span>
+                </Link>
               </li> */}
+              {/* ... other list items */}
             </ul>
           </nav>
         </div>
       </header>
       <main className="p-6">
-        <div className="max-w-lg mx-auto">
+      <div className="flex justify-center">
+      <div className="w-full max-w-lg">
+        <div className="relative">
           <input 
-            type="text" 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            placeholder="Enter your query in natural language"
-            className="border rounded p-2 w-full mb-4"
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
+            placeholder="Describe the type of research paper you'd like to explore..."
+            className="w-full pl-10 pr-4 py-3 p-4 h-14 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-lg"
           />
-          <button 
-            onClick={handleSearch} 
-            disabled={isLoading}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          <div 
+            className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
           >
-            {isLoading ? 'Searching...' : 'Search'}
-          </button>
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M6 11a6 6 0 1112 0 6 6 0 01-12 0z" />
+            </svg>
+          </div>
         </div>
+      </div>
+    </div>
         {papers.map((paper: any) => (
           <article key={paper.id} className="bg-white rounded-lg shadow-sm overflow-hidden m-4 transition duration-300 ease-in-out transform hover:shadow-lg hover:-translate-y-1 hover:scale-105">
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-800">{paper.title}</h2>
-              <p className="text-sm text-gray-500 mt-1">Authors: {paper.author ? paper.author.join(', ') : 'N/A'}</p>
+              {/* <p className="text-sm text-gray-500 mt-1">Authors: {paper.author ? paper.author.join(', ') : 'N/A'}</p> */}
+              <p className="text-sm text-gray-500 mt-1">Date: {paper.date}</p>
               <p className="text-sm text-gray-600 mt-3">{paper.summary}</p>
-              <a className="text-sm text-blue-500 hover:underline mt-2 inline-block" href={`https://arxiv.org/abs/${paper.id}`}>
+              <a className="text-sm text-blue-500 hover:underline mt-2 inline-block" href={`https://arxiv.org/abs/${paper.id}`} target='_blank'>
                 View Full Paper
               </a>
             </div>
@@ -117,9 +130,10 @@ export default function Summary() {
       </main>
       <footer className="flex items-center justify-center w-full h-16 border-t bg-white">
         <span className="text-sm text-gray-600">
-          © 2023 AI Summaries. All rights reserved.
+         Made with ❤️ in San Francisco
         </span>
       </footer>
     </div>
   );
 }
+

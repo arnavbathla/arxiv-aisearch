@@ -1,3 +1,59 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Add this to your CSS file */
+:root {
+  --primary-color: #0055ff; /* A vibrant blue */
+  --secondary-color: #f3f4f6; /* A light gray for backgrounds */
+  --text-color: #333333; /* Dark color for text */
+  --font-family: 'Poppins', sans-serif; /* Modern font */
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--text-color);
+  background-color: var(--secondary-color);
+}
+
+input, button {
+  font-family: var(--font-family);
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+input {
+  padding: 10px 15px;
+  width: 100%;
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: darken(var(--primary-color), 10%);
+}
+
+article {
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+article:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+/* Custom CSS for Unicorn Border */
+.input-unicorn-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.5), /* Pink */
+               0 0 0 6px rgba(135, 206, 235, 0.5); /* Sky Blue */
+}
