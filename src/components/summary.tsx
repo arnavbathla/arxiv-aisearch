@@ -15,6 +15,7 @@ export default function Summary() {
   const [query, setQuery] = useState('');
   const [papers, setPapers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const configuration = new Configuration({
     apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -127,6 +128,12 @@ export default function Summary() {
             </div>
           </article>
         ))}
+        {isLoading === false && papers.length === 0 ? (
+      <div className="text-center text-gray-600 mt-8">No papers found</div>
+        ) : null}
+        {error && (
+          <div className="text-center text-red-500 mt-8">{error}</div>
+        )}
       </main>
       <footer className="flex items-center justify-center w-full h-16 border-t bg-white">
         <span className="text-sm text-gray-600">
@@ -136,4 +143,5 @@ export default function Summary() {
     </div>
   );
 }
+
 
