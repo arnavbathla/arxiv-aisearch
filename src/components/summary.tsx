@@ -1,21 +1,27 @@
 // components/summary.tsx
 "use client";
 
-import React, { useState } from 'react';
+//Design changes to include: Search with '/' but cmd+k for commands/shortcuts for things such as filters, using arrow keys to navigate through shortcuts and search suggestions, Hover effects, better UI for the entire app (cleaner and more modern+premium), search suggestions, search suggestions for the modal, closing the modal with cmd+k, closing the modal with the left key, transition effects for searches, better spacing for search results, filters (date, with/without code, field, etc.), search with '/' key. 
+//I'll add more as they come to mind.
+
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import OpenAIApi from "openai";
 import createCompletion from "openai";
 import Configuration from "openai";
 import { parseStringPromise } from 'xml2js';
 import Link from 'next/link';
-import About from './about';
+// import About from './about';
+import SearchModal from './SearchModal';
 
 
 export default function Summary() {
+  const searchInputRef = React.useRef(null);
   const [query, setQuery] = useState('');
   const [papers, setPapers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const configuration = new Configuration({
     apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -23,12 +29,34 @@ export default function Summary() {
   });
   const openai = configuration;
   
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setIsModalOpen(prevIsModalOpen => !prevIsModalOpen);
+      }
+      else if (event.key ==='Escape') {
+        setIsModalOpen(false);
+      }
+      else if (event.key === '/') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
   const processQueryWithGPT4 = async (naturalQuery: string) => {
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-3.5-turbo",
         messages: [
-          { "role": "system", "content": "You are a helpful assistant. Translate English questions to arXiv search queries." },
+          { "role": "system", "content": "You are a search assistant with a great precision. Translate English questions to arXiv search queries that will yield the most amount of super relevant results - not an error. Again, your sole purpose is to yield the most amount of relevant results." },
           { "role": "user", "content": naturalQuery }
         ]
       });
@@ -98,11 +126,12 @@ export default function Summary() {
       <div className="w-full max-w-lg">
         <div className="relative">
           <input 
+            ref={searchInputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
-            placeholder="Describe the type of research paper you'd like to explore..."
+            placeholder="Describe the research paper you'd like to explore..."
             className="w-full pl-10 pr-4 py-3 p-4 h-14 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 text-lg"
           />
           <div 
@@ -140,6 +169,15 @@ export default function Summary() {
          Made with ❤️ in San Francisco
         </span>
       </footer>
+      <SearchModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSearch={(searchQuery) => {
+          setQuery(searchQuery);
+          setIsModalOpen(false);
+          handleSearch();
+        }}
+      />
     </div>
   );
 }
